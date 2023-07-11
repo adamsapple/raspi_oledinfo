@@ -34,7 +34,7 @@ OLED_HEIGHT		= 64
 @dataclass
 class Stats:
 	hostname: str = 'unknown'
-	ip: str = ''
+	ip: str = 'unknown'
 	temp: float = 0.0
 	cpu: float = 0.0
 	usedMem: float = 0.0
@@ -122,11 +122,15 @@ class Stats:
 		self.totalMem       = mem.total /1024/1024/1024
 
 	##
-	#
-	#
+	# IPアドレスの取得
+	# 取得できない場合は'unknown'となる
 	def updateIp(self):
-		self.ip = ipget.ipget().ipaddr(self.NETWORK_INTERFACE)
-		self.ip = re.sub('/\d+', '', self.ip)
+		try:
+			self.ip = ipget.ipget().ipaddr(self.NETWORK_INTERFACE)
+			self.ip = re.sub('/\d+', '', self.ip)
+		except:
+			self.ip = 'unknown'
+			pass
 
 	##
 	#
@@ -381,7 +385,7 @@ if __name__ == "__main__":
 	except KeyboardInterrupt:
 		print("Keyboard Interrupt detected.\nExit.")
 
-	# except Exception as e:
+	#except Exception as e:
 	#   print("Unknown exception detected.\nExit.")
 	#   print(e)
 
