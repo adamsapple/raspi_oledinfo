@@ -1,0 +1,13 @@
+[Unit]
+Description = pi info oled daemon
+
+[Service]
+User = pi
+Group = pi
+WorkingDirectory = /home/pi/documents/dev/piinfo/
+ExecStart = /home/pi/documents/dev/piinfo/piinfo.py
+Restart = always
+Type = simple
+
+[Install]
+WantedBy = multi-user.target
