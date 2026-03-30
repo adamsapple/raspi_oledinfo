@@ -24,7 +24,9 @@ DISPLAY_LENGTH  = 16          # OLED Word Count.
 UPDATE_INTERVAL = 3           # info update interval.
 NETWORK_INTERFACE = "wlan0"   # put ip from this network interface.
 IS_PUT_RULER    = True        # 
-FONT_PATH       = "/usr/share/fonts/truetype/noto/NotoMono-Regular.ttf"
+FONT_SIZE	    = 12          # font size for OLED. (makePilFont.py で作成する PIL font のサイズと合わせること)	
+#FONT_PATH       = "/usr/share/fonts/truetype/noto/NotoMono-Regular.ttf"
+FONT_PATH		= f"fonts/ter-u{FONT_SIZE}n.pil"   # makePilFont.py で作成した PIL font を指定
 OLED_WIDTH		= 128
 OLED_HEIGHT		= 64
 
@@ -236,7 +238,7 @@ class OledUtil:
 
 		# Get drawing object to draw on image.
 		self.draw  = ImageDraw.Draw(self.image)
-
+		self.draw.fontmode = "1"
 		self.aligner = aligner
 
 	##
@@ -358,8 +360,8 @@ def main():
 	# Load default font.
 	#font  = ImageFont.load_default()
 	#font2 = ImageFont.truetype("/usr/share/fonts/opentype/noto/NotoSansCJK-DemiLight.ttc", 10)
-	oledUtil.font = ImageFont.truetype(FONT_PATH, 13)
-
+	#oledUtil.font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
+	oledUtil.font = ImageFont.load(FONT_PATH)
 	oledUtil.putSplashOled(stats)
 
 	# update information.
