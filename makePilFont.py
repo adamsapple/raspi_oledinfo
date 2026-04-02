@@ -3,7 +3,7 @@ from PIL import ImageFont
 from PIL import BdfFontFile
 from PIL import PcfFontFile
 
-FONT_SIZE = 12
+FONT_SIZE = 14
 
 #with open(f"/usr/share/fonts/X11/misc/ter-u{FONT_SIZE}n.bdf", "rb") as fp:
 #    font = BdfFontFile.BdfFontFile(fp)

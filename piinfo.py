@@ -22,13 +22,15 @@ from PIL import Image, ImageDraw, ImageFont
 #
 DISPLAY_LENGTH  = 16          # OLED Word Count.
 UPDATE_INTERVAL = 3           # info update interval.
+BLACK_INTERVAL  = 10
 NETWORK_INTERFACE = "wlan0"   # put ip from this network interface.
 IS_PUT_RULER    = True        # 
-FONT_SIZE	    = 12          # font size for OLED. (makePilFont.py で作成する PIL font のサイズと合わせること)	
+FONT_SIZE	    = 14          # font size for OLED. (makePilFont.py で作成する PIL font のサイズと合わせること)	
 #FONT_PATH       = "/usr/share/fonts/truetype/noto/NotoMono-Regular.ttf"
-FONT_PATH		= f"fonts/ter-u{FONT_SIZE}n.pil"   # makePilFont.py で作成した PIL font を指定
+FONT_PATH		= f"./fonts/ter-u{FONT_SIZE}n.pil"   # makePilFont.py で作成した PIL font を指定
 OLED_WIDTH		= 128
 OLED_HEIGHT		= 64
+OLED_CONTRAST	= 80 # 0-255
 
 ##
 # Nodeの状態を表す
@@ -129,7 +131,7 @@ class Stats:
 	def updateIp(self):
 		try:
 			self.ip = ipget.ipget().ipaddr(self.NETWORK_INTERFACE)
-			self.ip = re.sub('/\d+', '', self.ip)
+			self.ip = re.sub(r'/\d+', '', self.ip)
 		except:
 			self.ip = 'unknown'
 			pass
@@ -167,7 +169,7 @@ class Aligner:
 		if length >= self.DISPLAY_LENGTH:
 			return msg.replace('*', '')
 
-		return re.sub('\*', ' ' * (self.DISPLAY_LENGTH - length + 1), msg)
+		return re.sub(r'\*', ' ' * (self.DISPLAY_LENGTH - length + 1), msg)
  
 	##
 	#
@@ -232,13 +234,13 @@ class OledUtil:
 	def __init__(self, width, height, i2c, address, aligner):
 		# Make oled instance.
 		self.oled = SSD1306_I2C(width, height, i2c, addr=address)
-		
+		self.oled.contrast(OLED_CONTRAST)  # 0-255
 		# Make sure to create image with mode "1" for 1-bit color.
 		self.image = Image.new("1", (self.oled.width, self.oled.height))
 
 		# Get drawing object to draw on image.
 		self.draw  = ImageDraw.Draw(self.image)
-		self.draw.fontmode = "1"
+		self.draw.fontmode = 1
 		self.aligner = aligner
 
 	##
@@ -254,8 +256,17 @@ class OledUtil:
 	#
 	#
 	def flush(self):
+		# self.oled.fill(0) 
 		self.oled.image(self.image)
 		self.oled.show()
+
+
+	##
+	# set font.
+	#
+	def setFont(self, path, fontSize):
+		#oledUtil.font = ImageFont.truetype(path, fontSize)
+		oledUtil.font = ImageFont.load(path)
 
 
 	##
@@ -267,30 +278,39 @@ class OledUtil:
 		
 		(fleft, ftop, fright, fbottom) = self.font.getbbox('A')
 		font_height = fbottom - ftop + 1
-
-		self.draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=0, fill=0)
+		rowH = font_height + -2
 		
+		self.draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=0, fill=0)
+
 		self.tick += 1
 		tick_color = 255 * (self.tick & 1)
 		
+		## 焼き付き防止処理
+		if self.tick % BLACK_INTERVAL == BLACK_INTERVAL -1:
+			self.flush()
+			return
+			#self.oled.invert(1)
+		#else:
+			#self.oled.invert(0)
+
 		self.draw.rectangle((self.oled.width - 1 - 2, 0, self.oled.width-1, 2), outline=tick_color, fill=tick_color)
 
 		#printOled("----+----+----+-", 0, 0)
 		dt_now = datetime.datetime.now()
 		self.printOled(dt_now.strftime('%m/%d %H:%M:%S'), 0, 0)
-		y += font_height + 2
+		y += rowH
 
 		self.printOled(self.aligner.rightMsg("IP:%s" % stats.ip), x, y)
-		y += font_height + 2
+		y += rowH
 
 		self.printOled(self.aligner.formattedMsg('CPU:{:>3.0f}%'.format(stats.cpu) +  '*{:.1f}°c'.format(stats.temp)), x, y)
-		y += font_height + 2
+		y += rowH
 
 		self.printOled(self.aligner.formattedMsg('MEM:{:>3.0f}%'.format(stats.usedMemPercent) + "*%.1fGB" % (stats.totalMem)), x, y)
-		y += font_height + 2
+		y += rowH
 
 		self.printOled(self.aligner.formattedMsg('DSK:{:>4.0%}'.format(stats.diskUseGB / stats.diskTotalGB) + "*%.0fGB" % (stats.diskTotalGB)), x, y)
-		y += font_height + 2
+		y += rowH
 
 		self.flush()
 
@@ -361,7 +381,8 @@ def main():
 	#font  = ImageFont.load_default()
 	#font2 = ImageFont.truetype("/usr/share/fonts/opentype/noto/NotoSansCJK-DemiLight.ttc", 10)
 	#oledUtil.font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
-	oledUtil.font = ImageFont.load(FONT_PATH)
+	#oledUtil.font = ImageFont.load(FONT_PATH)
+	oledUtil.setFont(FONT_PATH, FONT_SIZE)
 	oledUtil.putSplashOled(stats)
 
 	# update information.
