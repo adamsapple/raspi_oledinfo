@@ -1,0 +1,4 @@
+ipget
+board
+adafruit-blinka
+adafruit-circuitpython-ssd1306
